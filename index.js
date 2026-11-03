@@ -76,6 +76,15 @@ function toObjectId(id) {
   return ObjectId.isValid(id) ? new ObjectId(id) : null;
 }
 
+function isHttpUrl(value) {
+  try {
+    const u = new URL(value);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 // ---------- Health ----------
 app.get("/", (req, res) => res.send({ message: "BookNook server is running" }));
 
@@ -126,6 +135,9 @@ app.post("/books", verifyJWT, async (req, res) => {
     if (!title || !author || !category || !image || !description) {
       return res.status(400).send({ message: "All fields are required" });
     }
+    if (!isHttpUrl(image)) {
+      return res.status(400).send({ message: "Image must be a valid http or https URL" });
+    }
     if (!Number.isInteger(copies) || copies < 1) {
       return res.status(400).send({ message: "Total copies must be at least 1" });
     }
@@ -166,7 +178,12 @@ app.patch("/books/:id", verifyJWT, async (req, res) => {
     if (title) $set.title = title.trim();
     if (author) $set.author = author.trim();
     if (category) $set.category = category;
-    if (image) $set.image = image;
+    if (image) {
+      if (!isHttpUrl(image)) {
+        return res.status(400).send({ message: "Image must be a valid http or https URL" });
+      }
+      $set.image = image;
+    }
     if (description) $set.description = description.trim();
 
     if (totalCopies !== undefined) {
