@@ -321,6 +321,15 @@ app.delete("/borrows/:id", verifyJWT, async (req, res) => {
 // 404 for unknown API routes
 app.use((req, res) => res.status(404).send({ message: "Route not found" }));
 
+// Global error handler (bad JSON bodies and anything unexpected)
+app.use((err, req, res, next) => {
+  if (err.type === "entity.parse.failed") {
+    return res.status(400).send({ message: "Invalid JSON body" });
+  }
+  console.error(err);
+  res.status(500).send({ message: "Something went wrong on the server" });
+});
+
 if (require.main === module) {
   app.listen(PORT, () => console.log(`BookNook server running on port ${PORT}`));
 }
